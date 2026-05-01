@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bukh DV36">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Bukh DV36 — Log Consumi</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600&display=swap');
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2430;
+    --border: #30363d;
+    --accent: #e6a817;
+    --accent2: #3fb950;
+    --danger: #f85149;
+    --text: #e6edf3;
+    --muted: #7d8590;
+    --hvo: #58a6ff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+  }
+
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .header-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+  .header-actions { display: flex; gap: 8px; }
+
+  .btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+  .btn-primary:hover { background: #f5bc3a; color: #000; border-color: #f5bc3a; }
+
+  .status-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-card { background: var(--surface); padding: 14px 18px; }
+  .stat-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .stat-value {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 22px;
+    color: var(--text);
+    line-height: 1;
+  }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.good   { color: var(--accent2); }
+  .stat-value.warn   { color: #f0883e; }
+  .stat-value.danger { color: var(--danger); }
+  .stat-unit { font-size: 11px; color: var(--muted); margin-top: 3px; font-family: 'Share Tech Mono', monospace; }
+  .gauge-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  .gauge-fill { height: 100%; border-radius: 2px; transition: width .4s ease; }
+
+  .form-section {
+    padding: 20px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  .form-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .form-title.editing { color: var(--danger); font-weight: 600; }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    align-items: end;
+  }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field > span {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .field input[type="text"],
+  .field input[type="number"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 15px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color .15s;
+    width: 100%;
+  }
+  .field input:focus { border-color: var(--accent); }
+  .field input::placeholder { color: var(--border); }
+
+  .check-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: border-color .15s;
+    min-height: 38px;
+    outline: none;
+    user-select: none;
+  }
+  .check-field:hover { border-color: var(--accent); }
+  .check-field:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(230,168,23,.25); }
+  .check-box {
+    width: 16px; height: 16px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    flex-shrink: 0;
+    transition: all .15s;
+  }
+  .check-field.checked-full .check-box { background: var(--accent2); border-color: var(--accent2); color: #000; }
+  .check-field.checked-hvo  .check-box { background: var(--hvo);     border-color: var(--hvo);     color: #000; }
+  .check-label { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--muted); }
+  .check-field.checked-full .check-label { color: var(--accent2); }
+  .check-field.checked-hvo  .check-label { color: var(--hvo); }
+
+  .form-actions { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
+
+  .table-section { padding: 20px; }
+  .table-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .table-title { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; }
+  table { width: 100%; border-collapse: collapse; font-family: 'Share Tech Mono', monospace; font-size: 12px; }
+  thead tr { background: var(--surface); border-bottom: 1px solid var(--border); }
+  th { padding: 10px 12px; text-align: left; color: var(--muted); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; font-weight: 400; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  td { padding: 10px 12px; color: var(--text); white-space: nowrap; vertical-align: middle; }
+  td.muted  { color: var(--muted); }
+  td.accent { color: var(--accent); font-weight: 600; }
+  td.good   { color: var(--accent2); }
+  td.warn   { color: #f0883e; }
+  td.danger { color: var(--danger); }
+
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 3px; font-size: 10px; letter-spacing: 1px; }
+  .badge-full    { background: rgba(63,185,80,.15);  color: var(--accent2); border: 1px solid rgba(63,185,80,.3); }
+  .badge-hvo     { background: rgba(88,166,255,.15); color: var(--hvo);     border: 1px solid rgba(88,166,255,.3); }
+  .badge-partial { background: rgba(230,168,23,.1);  color: var(--accent);  border: 1px solid rgba(230,168,23,.2); }
+
+  .icon-btn {
+    background: transparent; border: none; cursor: pointer;
+    font-size: 13px; padding: 2px 5px; border-radius: 3px;
+    transition: all .15s; line-height: 1;
+  }
+  .icon-btn.edit { color: var(--border); }
+  .icon-btn.edit:hover { color: var(--hvo); background: rgba(88,166,255,.1); }
+  .icon-btn.del  { color: var(--border); }
+  .icon-btn.del:hover  { color: var(--danger); background: rgba(248,81,73,.1); }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-family: 'Share Tech Mono', monospace; font-size: 12px; letter-spacing: 1px; }
+
+  /* column alignment */
+  .col-num  { text-align: right; font-variant-numeric: tabular-nums; }
+  .col-dec  { text-align: right; font-variant-numeric: tabular-nums; }
+  .col-center { text-align: center; }
+  .col-left { text-align: left; }
+  td.estimated { color: #f0883e; }
+  .stat-value.estimated { color: #f0883e; }
+  .stat-label.estimated { color: #f0883e; }
+
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.7); z-index: 200;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 24px; width: 100%; max-width: 480px; }
+  .modal-title { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px; }
+  .modal textarea { width: 100%; height: 180px; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 11px; padding: 10px; border-radius: 4px; outline: none; resize: vertical; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
+  .modal-info { font-size: 11px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+
+  .param-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 4px; }
+  .param-field { display: flex; flex-direction: column; gap: 6px; }
+  .param-field label { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .param-field input { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 18px; padding: 8px 10px; border-radius: 4px; outline: none; transition: border-color .15s; width: 100%; }
+  .param-field input:focus { border-color: var(--accent); }
+
+  @media (max-width: 480px) {
+    /* header */
+    .header-title { font-size: 11px; }
+    .header-actions .btn:not(:last-child) { display: none; }
+
+    /* status bar: solo litri stimati e autonomia */
+    .status-bar { grid-template-columns: 1fr 1fr; }
+    .stat-card:nth-child(3),
+    .stat-card:nth-child(4) { display: none; }
+    .stat-value { font-size: 28px; }
+    .stat-label { font-size: 9px; }
+
+    /* form: 1 colonna */
+    .form-grid { grid-template-columns: 1fr; }
+
+    /* tabella nascosta */
+    .table-section { display: none; }
+  }
+
+  @media (min-width: 481px) and (max-width: 768px) {
+    .status-bar { grid-template-columns: repeat(2, 1fr); }
+    .form-grid  { grid-template-columns: 1fr 1fr; }
+    .stat-value { font-size: 18px; }
+  }
+
+  /* BANNER IMPORT */
+  .import-banner {
+    background: #1a1200;
+    border-bottom: 2px solid var(--accent);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .import-banner-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+  .import-banner-text span {
+    color: var(--muted);
+    margin-left: 8px;
+  }
+  .import-banner-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+  /* TOAST EXPORT */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--accent2);
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--accent2);
+    letter-spacing: 1px;
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all .3s ease;
+    max-width: 320px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.warn { border-color: var(--accent); color: var(--accent); }
+  .toast-close {
+    background: none; border: none; color: inherit;
+    cursor: pointer; font-size: 14px; padding: 0 2px; line-height: 1;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">⚓ Bukh DV36 — Log Consumi</div>
+    <div class="header-sub" id="header-sub"></div>
+  </div>
+  <div class="header-actions">
+    <button class="btn" onclick="openParams()">Parametri</button>
+    <button class="btn" onclick="openExport()">Esporta</button>
+    <button class="btn" onclick="openImport()">Importa</button>
+  </div>
+</div>
+
+<div class="import-banner" id="import-banner" style="display:none">
+  <div class="import-banner-text">
+    ⚠ SESSIONE NUOVA
+    <span>Ricorda di importare i dati aggiornati prima di inserire nuove registrazioni</span>
+  </div>
+  <div class="import-banner-actions">
+    <button class="btn-primary btn" onclick="openImport();dismissBanner()">Importa ora</button>
+    <button class="btn" onclick="dismissBanner()">Ho già importato</button>
+  </div>
+</div>
+
+<div class="status-bar">
+  <div class="stat-card">
+    <div class="stat-label" id="stat-litri-label">Litri stimati</div>
+    <div class="stat-value accent" id="stat-litri">—</div>
+    <div class="stat-unit" id="stat-litri-unit"></div>
+    <div class="gauge-bar"><div class="gauge-fill" id="gauge-litri" style="width:0%;background:var(--accent)"></div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Autonomia residua</div>
+    <div class="stat-value" id="stat-autonomia">—</div>
+    <div class="stat-unit">ore</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Consumo effettivo</div>
+    <div class="stat-value" id="stat-consumo">—</div>
+    <div class="stat-unit">ultimo FULL</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Ore motore</div>
+    <div class="stat-value accent" id="stat-ore">—</div>
+    
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="form-title" id="form-title">▶ Nuova registrazione</div>
+  <div class="form-grid">
+    <div class="field">
+      <span>Data (GGMMAA)</span>
+      <input type="text" id="f-data" placeholder="010525" maxlength="6" tabindex="1">
+    </div>
+    <div class="field">
+      <span>Contaore (h)</span>
+      <input type="number" id="f-ore" placeholder="123.4" step="0.1" min="0" tabindex="2">
+    </div>
+    <div class="field">
+      <span>Litri riforniti</span>
+      <input type="number" id="f-litri" placeholder="0" step="1" min="0" tabindex="3">
+    </div>
+    <div class="field">
+      <span>Tipo rifornimento</span>
+      <div class="check-field" id="lbl-full" tabindex="4"
+           role="checkbox" aria-checked="false"
+           onclick="toggleCheck('full')"
+           onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();toggleCheck('full');}">
+        <div class="check-box" id="box-full"></div>
+        <span class="check-label">FULL</span>
+      </div>
+    </div>
+    <div class="field">
+      <span>Carburante</span>
+      <div class="check-field" id="lbl-hvo" tabindex="5"
+           role="checkbox" aria-checked="false"
+           onclick="toggleCheck('hvo')"
+           onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();toggleCheck('hvo');}">
+        <div class="check-box" id="box-hvo"></div>
+        <span class="check-label">HVO</span>
+      </div>
+    </div>
+    <div class="field">
+      <span>Note</span>
+      <input type="text" id="f-note" placeholder="opzionale" tabindex="6">
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn" onclick="cancelEdit()" tabindex="8">Annulla</button>
+    <button class="btn-primary btn" onclick="saveRecord()" tabindex="7">Registra</button>
+  </div>
+</div>
+
+<div class="table-section">
+  <div class="table-header">
+    <div class="table-title">Registro</div>
+    <div id="record-count" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted)"></div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-dec">Data</th>
+          <th class="col-dec">Contaore</th>
+          <th style="text-align:center">Δ ORE</th>
+          <th class="col-dec">Litri rif.</th>
+          <th class="col-center">Tipo</th>
+          <th class="col-center">HVO</th>
+          <th class="col-dec">Consumo eff.</th>
+          <th class="col-center">Litri stimati</th>
+          <th class="col-center">Autonomia</th>
+          <th class="col-left">Note</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="log-body">
+        <tr><td colspan="11" class="empty-state">Nessuna registrazione</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- EXPORT -->
+<div class="modal-overlay" id="modal-export">
+  <div class="modal">
+    <div class="modal-title">Esporta dati</div>
+    <div class="modal-info">Scarica il file <strong>bukh_log.json</strong> e spostalo su iCloud Drive per sincronizzare gli altri device.</div>
+    <div style="text-align:center;padding:24px 0 8px">
+      <span style="font-size:40px">💾</span>
+      <div id="export-info" style="margin-top:12px;font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted)"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModals()">Annulla</button>
+      <button class="btn-primary btn" onclick="doExportDownload()">Scarica JSON</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT -->
+<div class="modal-overlay" id="modal-import">
+  <div class="modal">
+    <div class="modal-title">Importa dati</div>
+    <div class="modal-info">Seleziona il file <strong>bukh_log.json</strong> da iCloud Drive. I dati esistenti verranno <strong style="color:var(--danger)">sostituiti</strong>.</div>
+    <div style="margin:16px 0">
+      <label id="file-drop-zone" style="
+        display:flex;flex-direction:column;align-items:center;justify-content:center;
+        gap:10px;padding:32px 20px;
+        background:var(--bg);border:2px dashed var(--border);border-radius:6px;
+        cursor:pointer;transition:border-color .15s;font-family:'Share Tech Mono',monospace;
+      " onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+        <span style="font-size:28px">📂</span>
+        <span style="font-size:12px;color:var(--muted);letter-spacing:1px">SCEGLI FILE JSON</span>
+        <span style="font-size:10px;color:var(--border)">oppure trascinalo qui</span>
+        <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="doImport()">
+      </label>
+      <div id="import-filename" style="margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);text-align:center;min-height:16px"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModals()">Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- PARAMETRI -->
+<div class="modal-overlay" id="modal-params">
+  <div class="modal">
+    <div class="modal-title">Parametri</div>
+    <div class="modal-info">Le modifiche vengono applicate immediatamente a tutti i calcoli.</div>
+    <div class="param-grid">
+      <div class="param-field">
+        <label>Capacità serbatoio (l)</label>
+        <input type="number" id="p-tank" step="1" min="1">
+      </div>
+      <div class="param-field">
+        <label>Consumo riferimento (l/h)</label>
+        <input type="number" id="p-cons" step="0.1" min="0.1">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModals()">Annulla</button>
+      <button class="btn-primary btn" onclick="saveParams()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let TANK     = 115;
+let CONS_REF = 3.2;
+const STORAGE_KEY        = 'bukh_log_v1';
+const STORAGE_PARAMS_KEY = 'bukh_params_v1';
+let records  = [];
+let editingId = null;
+
+// --- PARAMS ---
+function loadParams() {
+  try {
+    const p = JSON.parse(localStorage.getItem(STORAGE_PARAMS_KEY));
+    if (p && p.tank) { TANK = p.tank; CONS_REF = p.cons; }
+  } catch(e) {}
+}
+function saveParamsStorage() {
+  try { localStorage.setItem(STORAGE_PARAMS_KEY, JSON.stringify({tank:TANK, cons:CONS_REF})); } catch(e) {}
+}
+function openParams() {
+  document.getElementById('p-tank').value = TANK;
+  document.getElementById('p-cons').value = CONS_REF;
+  document.getElementById('modal-params').classList.add('open');
+}
+function saveParams() {
+  const t = parseFloat(document.getElementById('p-tank').value);
+  const c = parseFloat(document.getElementById('p-cons').value);
+  if (!t || !c || t <= 0 || c <= 0) { alert('Valori non validi.'); return; }
+  TANK = t; CONS_REF = c;
+  saveParamsStorage();
+  refreshHeader();
+  render();
+  closeModals();
+}
+function refreshHeader() {
+  document.getElementById('header-sub').textContent =
+    'Riva di Traiano · Serbatoio ' + TANK + ' l · ' + CONS_REF.toFixed(2) + ' l/h';
+  document.getElementById('stat-litri-unit').textContent = 'litri / ' + TANK + ' l';
+}
+
+// --- RECORDS STORAGE ---
+function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); } catch(e) {} }
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // migra record vecchi: .litri → .litriRif
+      records = parsed.map(r => {
+        if (r.litriRif === undefined || isNaN(r.litriRif)) {
+          return { ...r, litriRif: (r.litri !== undefined && !isNaN(r.litri)) ? r.litri : 0 };
+        }
+        return r;
+      });
+    }
+  } catch(e) { records = []; }
+}
+
+// --- CHECKBOX ---
+function setCheck(type, state) {
+  const lbl = document.getElementById('lbl-' + type);
+  const box = document.getElementById('box-' + type);
+  const cls = type === 'full' ? 'checked-full' : 'checked-hvo';
+  lbl.classList.toggle(cls, state);
+  lbl.setAttribute('aria-checked', String(state));
+  box.textContent = state ? '✓' : '';
+}
+function getCheck(type) {
+  return document.getElementById('lbl-' + type).classList.contains(
+    type === 'full' ? 'checked-full' : 'checked-hvo'
+  );
+}
+function toggleCheck(type) { setCheck(type, !getCheck(type)); }
+
+// --- FORM ---
+function clearForm() {
+  ['f-data','f-ore','f-litri','f-note'].forEach(id => document.getElementById(id).value = '');
+  setCheck('full', false);
+  setCheck('hvo',  false);
+}
+function cancelEdit() {
+  editingId = null;
+  const t = document.getElementById('form-title');
+  t.textContent = '▶ Nuova registrazione';
+  t.classList.remove('editing');
+  clearForm();
+}
+function editRecord(id) {
+  const rec = records.find(r => r.id === id);
+  if (!rec) return;
+  editingId = id;
+  document.getElementById('f-data').value  = rec.data || '';
+  document.getElementById('f-ore').value   = rec.ore;
+  document.getElementById('f-litri').value = rec.litriRif !== undefined ? rec.litriRif : (rec.litri || '');
+  document.getElementById('f-note').value  = rec.note || '';
+  setCheck('full', rec.isFull);
+  setCheck('hvo',  rec.isHvo);
+  const t = document.getElementById('form-title');
+  t.textContent = '✏ Modifica registrazione';
+  t.classList.add('editing');
+  window.scrollTo({top: 0, behavior: 'smooth'});
+  document.getElementById('f-data').focus();
+}
+
+function saveRecord() {
+  const dataRaw  = document.getElementById('f-data').value.trim();
+  const oreRaw   = document.getElementById('f-ore').value.trim();
+  const litriRaw = document.getElementById('f-litri').value.trim();
+  const isFull   = getCheck('full');
+  const isHvo    = getCheck('hvo');
+  const note     = document.getElementById('f-note').value.trim();
+
+  if (!oreRaw) { alert('Il contaore è obbligatorio.'); return; }
+  // Verifica coerenza contaore rispetto all'ultimo record (escluso eventuale record in modifica)
+  if (records.length > 0) {
+    const otherRecords = editingId ? records.filter(r => r.id !== editingId) : records;
+    if (otherRecords.length > 0) {
+      const maxOre = Math.max(...otherRecords.map(r => r.ore));
+      const ore_check = parseFloat(oreRaw);
+      if (!isNaN(ore_check) && ore_check < maxOre) {
+        const ok = confirm('⚠ Contaore ' + ore_check.toFixed(1) + ' h è inferiore al massimo registrato (' + maxOre.toFixed(1) + ' h).\nInserimento fuori sequenza — confermi?');
+        if (!ok) return;
+      }
+    }
+  }
+  if (dataRaw) {
+    if (dataRaw.length === 8) { alert('Data in formato GGMMAAAA — usa GGMMAA (6 cifre, es. 010525).'); return; }
+    if (dataRaw.length !== 6 || isNaN(Number(dataRaw))) { alert('Data non valida — formato GGMMAA (6 cifre, es. 010525).'); return; }
+  }
+  const ore      = parseFloat(oreRaw);
+  const litriRif = litriRaw !== '' ? Math.round(parseFloat(litriRaw)) : 0;
+  if (isNaN(ore) || ore < 0) { alert('Contaore non valido.'); return; }
+
+  const rec = {
+    id:       editingId || Date.now(),
+    data:     dataRaw,
+    ore,
+    litriRif,   // litri fisicamente pompati
+    isFull,     // se true → livello post-riforinmento = TANK
+    isHvo,
+    note,
+    ts: Date.now()
+  };
+
+  if (editingId) {
+    records = records.map(r => r.id === editingId ? rec : r);
+  } else {
+    records.push(rec);
+  }
+  records.sort((a,b) => a.ore - b.ore);
+  save();
+  cancelEdit();
+  render();
+  autoExport();
+}
+
+function deleteRecord(id) {
+  if (!confirm('Eliminare questa registrazione?')) return;
+  records = records.filter(r => r.id !== id);
+  save();
+  render();
+  autoExport();
+}
+
+// --- CALC ---
+// litriRif = litri fisicamente pompati (base per consumo effettivo)
+// isFull   = il serbatoio è a 115 l dopo il rifornimento (base per stima successiva)
+// consumo effettivo = litriRif / ore_dall_ultimo_FULL
+// livello stimato   = TANK − (ore_dall_ultimo_FULL × CONS_REF)
+function calcRecords() {
+  const computed = [];
+  let lastFullIdx = -1;
+
+  for (let i = 0; i < records.length; i++) {
+    const rec    = records[i];
+    const prevOre  = i > 0 ? records[i-1].ore : null;
+    const deltaOre = prevOre !== null ? +(rec.ore - prevOre).toFixed(1) : null;
+
+    // litri riforniti in questo record (con fallback formato vecchio)
+    const lr = (rec.litriRif !== undefined && !isNaN(rec.litriRif)) ? rec.litriRif
+             : ((rec.litri   !== undefined && !isNaN(rec.litri))    ? rec.litri : 0);
+
+    // consumo effettivo: solo su FULL, somma tutti i litri dall'ultimo FULL
+    let consumoEff = null;
+    if (rec.isFull && lastFullIdx >= 0) {
+      const dOre = rec.ore - records[lastFullIdx].ore;
+      if (dOre > 0) {
+        let totLitri = 0;
+        for (let j = lastFullIdx + 1; j <= i; j++) {
+          const lj = (records[j].litriRif !== undefined && !isNaN(records[j].litriRif)) ? records[j].litriRif
+                   : ((records[j].litri   !== undefined && !isNaN(records[j].litri))    ? records[j].litri : 0);
+          totLitri += lj;
+        }
+        consumoEff = +(totLitri / dOre).toFixed(2);
+      }
+    }
+
+    // livello stimato
+    let litriStimati = null;
+    let autonomia    = null;
+    if (rec.isFull) {
+      litriStimati = TANK;
+      autonomia    = TANK / CONS_REF;
+      lastFullIdx  = i;
+    } else if (lastFullIdx >= 0) {
+      // livello precedente + rifornimento - consumo nel deltaOre
+      const prevStimati = i > 0 && computed[i-1].litriStimati !== null ? computed[i-1].litriStimati : TANK;
+      const consumed    = deltaOre !== null ? deltaOre * CONS_REF : 0;
+      litriStimati      = Math.max(0, prevStimati + lr - consumed);
+      autonomia         = litriStimati / CONS_REF;
+    }
+
+    computed.push({ ...rec, deltaOre, consumoEff, litriStimati, autonomia });
+  }
+
+  return computed;
+}
+
+// --- RENDER ---
+function render() {
+  const computed = calcRecords();
+  const tbody    = document.getElementById('log-body');
+
+  if (computed.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="11" class="empty-state">Nessuna registrazione</td></tr>';
+    updateStats(null);
+    document.getElementById('record-count').textContent = '';
+    return;
+  }
+  document.getElementById('record-count').textContent = computed.length + ' registrazioni';
+
+  const lastId = computed[computed.length - 1].id;
+
+  tbody.innerHTML = [...computed].reverse().map(r => {
+    const fmtData = r.data && r.data.length === 6
+      ? r.data.slice(0,2)+'/'+r.data.slice(2,4)+'/'+r.data.slice(4)
+      : (r.data || '???');
+
+    const consClass = r.consumoEff === null ? 'muted' : 'good';
+    const consText  = r.consumoEff !== null ? r.consumoEff.toFixed(2)+' l/h' : '—';
+
+    const litriText = r.litriStimati !== null ? Math.round(r.litriStimati)+' l' : '—';
+    const autText   = r.autonomia    !== null ? Math.ceil(r.autonomia)+' h'    : '—';
+
+    const tipoText = r.isFull
+      ? '<span class="badge badge-full">FULL</span>'
+      : '<span class="badge badge-partial">PARZIALE</span>';
+    const hvoText  = r.isHvo
+      ? '<span class="badge badge-hvo">HVO</span>'
+      : '<span class="muted">—</span>';
+
+    const litriRifDisplay = (r.litriRif !== undefined && !isNaN(r.litriRif)) ? r.litriRif : ((r.litri !== undefined && !isNaN(r.litri)) ? r.litri : '—');
+
+    const editBtn = `<button class="icon-btn edit" onclick="editRecord(${r.id})" title="Modifica">✎</button>`;
+
+    const deltaStr    = r.deltaOre !== null ? '+ ' + r.deltaOre + ' h' : '—';
+    const litriRifStr = litriRifDisplay !== '—' ? litriRifDisplay + ' l' : '—';
+    const autStr      = r.autonomia !== null ? Math.ceil(r.autonomia) + ' h' : '—';
+    const litriEstStr = r.isFull ? '<span class="badge badge-full">FULL</span>'
+                    : (r.litriStimati !== null ? Math.round(r.litriStimati) + ' l' : '—');
+    const litriEstClass = r.isFull ? 'good' : 'estimated';
+
+    return `<tr>
+      <td class="col-dec">${fmtData}</td>
+      <td class="col-dec">${r.ore.toFixed(1)} h</td>
+      <td class="muted col-center">${deltaStr}</td>
+      <td class="col-dec">${litriRifStr}</td>
+      <td class="col-center">${tipoText}</td>
+      <td class="col-center">${hvoText}</td>
+      <td class="${consClass} col-dec">${consText}</td>
+      <td class="${litriEstClass} col-center">${litriEstStr}</td>
+      <td class="estimated col-center">${autStr}</td>
+      <td class="col-left muted">${r.note || '—'}</td>
+      <td style="display:flex;gap:2px;align-items:center">${editBtn}<button class="icon-btn del" onclick="deleteRecord(${r.id})" title="Elimina">✕</button></td>
+    </tr>`;
+  }).join('');
+
+  updateStats(computed[computed.length - 1]);
+}
+
+// --- STATS ---
+function updateStats(last) {
+  if (!last) {
+    ['stat-litri','stat-autonomia','stat-consumo','stat-ore'].forEach(id => {
+      document.getElementById(id).textContent = '—';
+      document.getElementById(id).className = 'stat-value';
+    });
+    document.getElementById('gauge-litri').style.width = '0%';
+    return;
+  }
+
+  const elL    = document.getElementById('stat-litri');
+  const elLlbl = document.getElementById('stat-litri-label');
+  const isEstimated = last.litriStimati !== null && !last.isFull;
+  if (elLlbl) elLlbl.className = 'stat-label' + (isEstimated ? ' estimated' : '');
+  if (last.litriStimati !== null) {
+    elL.textContent = Math.round(last.litriStimati) + ' l';
+    const pct    = Math.min(100, last.litriStimati / TANK * 100);
+    const gColor = isEstimated ? '#f0883e' : 'var(--accent2)';
+    document.getElementById('gauge-litri').style.width      = pct + '%';
+    document.getElementById('gauge-litri').style.background = gColor;
+    elL.className = isEstimated ? 'stat-value estimated' : 'stat-value good';
+  } else {
+    elL.textContent = '—'; elL.className = 'stat-value muted';
+    document.getElementById('gauge-litri').style.width = '0%';
+  }
+
+  const elA = document.getElementById('stat-autonomia');
+  if (last.autonomia !== null) {
+    elA.textContent = Math.ceil(last.autonomia);
+    elA.className   = 'stat-value estimated';
+  } else { elA.textContent = '—'; elA.className = 'stat-value muted'; }
+
+  const elC   = document.getElementById('stat-consumo');
+  const lastC = [...calcRecords()].reverse().find(r => r.consumoEff !== null);
+  if (lastC) {
+    elC.textContent = lastC.consumoEff.toFixed(2) + ' l/h';
+    elC.className   = 'stat-value good';
+  } else { elC.textContent = '—'; elC.className = 'stat-value muted'; }
+
+  document.getElementById('stat-ore').textContent = last.ore.toFixed(1) + ' h';
+}
+
+// --- EXPORT / IMPORT ---
+function openExport() {
+  const n = records.length;
+  const last = n > 0 ? records[n-1] : null;
+  const info = last
+    ? n + ' registrazioni · ultimo contaore ' + last.ore.toFixed(1) + ' h'
+    : 'Nessuna registrazione';
+  document.getElementById('export-info').textContent = info;
+  document.getElementById('modal-export').classList.add('open');
+}
+function doExportDownload() {
+  autoExport();
+  closeModals();
+}
+function openImport() {
+  document.getElementById('import-file').value = '';
+  document.getElementById('import-filename').textContent = '';
+  document.getElementById('modal-import').classList.add('open');
+}
+function doImport() {
+  const fileInput = document.getElementById('import-file');
+  const file = fileInput.files[0];
+  if (!file) return;
+  document.getElementById('import-filename').textContent = '📄 ' + file.name;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) throw new Error('Formato non valido');
+      records = data.map(r => ({
+        ...r,
+        litriRif: r.litriRif !== undefined ? r.litriRif : (r.litri || 0)
+      }));
+      records.sort((a,b) => a.ore - b.ore);
+      save(); render(); closeModals();
+      dismissBanner();
+      showToast('✓ ' + records.length + ' registrazioni importate', 'ok', 3000);
+    } catch(err) {
+      alert('File non valido: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+function closeModals() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+}
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) closeModals(); });
+});
+
+// --- AUTO EXPORT ---
+function autoExport() {
+  try {
+    const json = JSON.stringify(records, null, 2);
+    const blob = new Blob([json], {type: 'application/json'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    const now = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    const fname = now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate()) + pad(now.getHours()) + pad(now.getMinutes()) + '_bukh_log.json';
+    a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('✓ Dati esportati — salva il file su iCloud Drive', 'ok', 4000);
+  } catch(e) {
+    showToast('⚠ Export automatico non riuscito — usa il tasto Esporta', 'warn', 6000);
+  }
+}
+
+// --- TOAST ---
+let toastTimer = null;
+function showToast(msg, type, duration) {
+  const t = document.getElementById('toast');
+  const m = document.getElementById('toast-msg');
+  m.textContent = msg;
+  t.className = 'toast' + (type === 'warn' ? ' warn' : '') + ' show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, duration || 4000);
+}
+function hideToast() {
+  document.getElementById('toast').classList.remove('show');
+}
+
+// --- IMPORT BANNER ---
+const BANNER_KEY = 'bukh_banner_dismissed';
+function showBannerIfNeeded() {
+  // Mostra il banner se non è già stato dismesso in questa sessione
+  if (!sessionStorage.getItem(BANNER_KEY) && records.length > 0) {
+    document.getElementById('import-banner').style.display = 'flex';
+  }
+}
+function dismissBanner() {
+  sessionStorage.setItem(BANNER_KEY, '1');
+  document.getElementById('import-banner').style.display = 'none';
+}
+
+// --- DRAG & DROP import ---
+document.addEventListener('DOMContentLoaded', () => {
+  const zone = document.getElementById('file-drop-zone');
+  if (!zone) return;
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--accent)'; });
+  zone.addEventListener('dragleave', () => { zone.style.borderColor = 'var(--border)'; });
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.style.borderColor = 'var(--border)';
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    document.getElementById('import-file').files = dt.files;
+    doImport();
+  });
+});
+
+// --- INIT ---
+loadParams();
+refreshHeader();
+load();
+render();
+showBannerIfNeeded();
+</script>
+<div class="toast" id="toast">
+  <span id="toast-msg"></span>
+  <button class="toast-close" onclick="hideToast()">✕</button>
+</div>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js')
+      .then(r => console.log('SW registered'))
+      .catch(e => console.log('SW error', e));
+  });
+}
+</script>
+</body>
+</html>
